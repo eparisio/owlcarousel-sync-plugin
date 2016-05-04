@@ -1,7 +1,7 @@
 # OwlCarousel Sync Plugin
 This is a plugin to sync two Owl Carousels.
 
-##### Inspired by @tonykiefer's script in http://vertx.com/edc-transit-sling
+##### Inspired by @tonykiefer 's script in http://vertx.com/edc-transit-sling
 
 See:
 - https://github.com/OwlCarousel2/OwlCarousel2/issues/1350
