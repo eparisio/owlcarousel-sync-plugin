@@ -1,121 +1,121 @@
 /**
- * @author Luiz Filipe Machado Barni <luizfilipe2557@gmail.com> <@luizfilipe2557>
- * 
- * Inspired by @tonykiefer's script in http://vertx.com/edc-transit-sling
- *
- * @license Copyright (c) 2016 Luiz Filipe Machado Barni
- *
- * @see https://github.com/OwlCarousel2/OwlCarousel2/issues/1350
- * @see https://github.com/OwlCarousel2/OwlCarousel2/issues/1377
- *
- * @description This function was made to supply the need to synchronize two OwlCarousels. E.g.: embed product gallery.
- *
- * @usage Just follow the steps:
- *      1. Construct your exhibition carousel and your nav carousel the way you want.
- *      2. Use jQuery selector (or variable with the carousel Object) and plug the plugin on it, the plugin has an Object parameter.
- *      3. In the Object parameter, put the $(selector) of the nav carousel in the key 'target' or 'syncWith'. See example below:
- *
- *      @example $('.owl-exhibition').owlSync({
- *                   target: $('.owl-nav')
- *               });
- *
- *      4. You can still pass the duration (in milliseconds) of the slide transition and the index of first slide: 
- *
- *      @example $('.owl-exhibition').owlSync({
- *                   syncWith: $('.owl-nav'),
- *                   duration: 200, // this is an int variable that represents time in milliseconds (ms)
- *                   startIndex: 3 // will link the carousels on the fourth slide.
- *               });
- *
- * @param Object options has the $('.owl-nav') jQuery object and duration of slide transition. (example above)
- *
- * @version 1.0
- *
+ * Sync Plugin
+ * @version 2.1.0
+ * @author Emanuele parisio
+ * @license The MIT License (MIT)
  */
+;(function($, window, document, undefined) {
+	'use strict';
 
-"use strict";
+	/**
+	 * Creates the navigation plugin.
+	 * @class The Navigation Plugin
+	 * @param {Owl} carousel - The Owl Carousel.
+	 */
+	var Sync = function(carousel) {
+		/**
+		 * Reference to the core.
+		 * @protected
+		 * @type {Owl}
+		 */
+		this._core = carousel;
 
-(function ($) {
-    $.fn.owlSync = function (options) {
+		/**
+		 * Indicates whether the plugin is initialized or not.
+		 * @protected
+		 * @type {Boolean}
+		 */
+		this._initialized = false;
 
-        var src = $(this);
+		/**
+		 * The carousel element.
+		 * @type {jQuery}
+		 */
+		this.$element = this._core.$element;
 
-        var defaults = {
-            target: false,
-            syncWith: false,
-            duration: 300,
-            startIndex: 0,
-            debug: false
-        };
+		/**
+		 * All event handlers.
+		 * @TODO dataTarget of the target for sync event
+		 * @protected
+		 * @type {Object}
+		 */
+		this._handlers = {
+			'change.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && e.property.name == 'position') {
+					var settings = this._core.settings,
+						targetData;
+					this._core.trigger('syncBefore', {
+						syncTarget: { 
+							name: settings.syncTarget,
+							elements: $(settings.syncTarget),
+							position: e.item.index,
+							data: targetData
+						},
+					});
+				}
+			}, this),
+			'changed.owl.carousel': $.proxy(function(e) {
+				if (e.namespace && e.property.name == 'position') {
+					this.update(e.item.index);
+					var settings = this._core.settings;
+					this._core.trigger('syncAfter', { 
+						syncTarget: { 
+							name: settings.syncTarget,
+							elements: $(settings.syncTarget),
+							position: e.item.index
+						},
+					});
+				}
+			}, this),
+		};
 
-        // DEEP COPY:
-        var settings = $.extend(true, {}, defaults, options);
+		// set default options
+		this._core.options = $.extend({}, Sync.Defaults, this._core.options);
 
-        if (settings.debug) {
-            console.log(src);
-            console.log(settings);
-        }
+		// register event handlers
+		this.$element.on(this._handlers);
+	};
 
-        return src.each(function () {
-            var $thisSrc = $(this);
-            var $thisNav = settings.target || settings.syncWith;
+	/**
+	 * Default options.
+	 * @public
+	 */
+	Sync.Defaults = {
+		syncTarget : false
+	};
 
-            if (!$thisNav) {
-                console.error('Error 001: não achei seu carousel de navegação.');
-                return false;
-            }
+	/**
+	 * Initializes the plugin and extends the carousel.
+	 * @protected
+	 */
+	Sync.prototype.initialize = function() {
+		
+	};
 
-            $thisSrc.on('changed.owl.carousel', function (e) {
-                runOwlSync({
-                    owlSrc: $thisSrc,
-                    owlTarget: $thisNav,
-                    index: e.item.index
-                });
-            });
+	/**
+	 * Updates target carousel state.
+	 * @protected
+	 */
+	Sync.prototype.update = function(position) {
+		var settings = this._core.settings;
+		$(settings.syncTarget).trigger('to.owl.carousel', [position, settings.navSpeed, true]);
+	};
 
-            $thisNav.on('changed.owl.carousel', function (e) {
-                runOwlSync({
-                    owlSrc: $thisNav,
-                    owlTarget: $thisSrc,
-                    index: e.item.index
-                });
-            }).find('.owl-item').on('click', function () {
-                // Sync two times: 1st to slide to index in $thisSrc and 2nd to slide to index in $thisNav.
-                runOwlSync({
-                    owlSrc: $thisNav,
-                    owlTarget: $thisSrc,
-                    index: $(this).index()
-                });
-                runOwlSync({
-                    owlSrc: $thisSrc,
-                    owlTarget: $thisNav,
-                    index: $(this).index()
-                });
-            });
+	/**
+	 * Destroys the plugin.
+	 * @protected
+	 */
+	Sync.prototype.destroy = function() {
+		var handler, property;
 
-            runOwlSync({
-                owlSrc: $thisNav,
-                owlTarget: $thisSrc,
-                index: settings.startIndex
-            });
+		for (handler in this._handlers) {
+			this.$element.off(handler, this._handlers[handler]);
+		}
+		for (property in Object.getOwnPropertyNames(this)) {
+			typeof this[property] != 'function' && (this[property] = null);
+		}
+	};
 
-            $thisSrc.trigger('sync.owl.carousel');
-        });
-    };
+	$.fn.owlCarousel.Constructor.Plugins.Sync = Sync;
 
-    var flag = false;
-
-    function runOwlSync(settings) {
-        if (!flag) {
-            //console.info('Linking slides.');
-            flag = true;
-            settings.owlTarget.trigger('to.owl.carousel', [settings.index, settings.duration, true]);
-            // Remove actual link between and links the slides who have the same index.
-            settings.owlTarget.find('.owl-item').removeClass('linked').eq(settings.index).addClass('linked');
-            settings.owlSrc.find('.owl-item').removeClass('linked').eq(settings.index).addClass('linked');
-            flag = false;
-        } else {
-            //console.warn('Blocking link overflow.');
-        }
-    }
-})(jQuery);
+})(window.Zepto || window.jQuery, window, document);
