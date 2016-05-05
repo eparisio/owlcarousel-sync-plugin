@@ -34,6 +34,7 @@ Just follow the steps:
       startIndex: 3 // will link the carousels on the fourth slide.
   });
   ```
+5. Note that the sync slides will have the `.linked` class, that allows you to style them.
 
 #### Aditional usage information:
 Object options has the $('.owl-nav') jQuery object and duration of slide transition. (example above)
