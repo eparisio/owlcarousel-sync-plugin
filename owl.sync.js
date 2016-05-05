@@ -8,8 +8,8 @@
 	'use strict';
 
 	/**
-	 * Creates the navigation plugin.
-	 * @class The Navigation Plugin
+	 * Creates the sync plugin.
+	 * @class The sync Plugin
 	 * @param {Owl} carousel - The Owl Carousel.
 	 */
 	var Sync = function(carousel) {
@@ -21,13 +21,6 @@
 		this._core = carousel;
 
 		/**
-		 * Indicates whether the plugin is initialized or not.
-		 * @protected
-		 * @type {Boolean}
-		 */
-		this._initialized = false;
-
-		/**
 		 * The carousel element.
 		 * @type {jQuery}
 		 */
@@ -35,44 +28,27 @@
 
 		/**
 		 * All event handlers.
-		 * @TODO dataTarget of the target for sync event
 		 * @protected
 		 * @type {Object}
 		 */
 		this._handlers = {
 			'change.owl.carousel': $.proxy(function(e) {
 				if (e.namespace && e.property.name == 'position') {
-					var settings = this._core.settings,
-						targetData;
-					this._core.trigger('syncBefore', {
-						syncTarget: { 
-							name: settings.syncTarget,
-							elements: $(settings.syncTarget),
-							position: e.item.index,
-							data: targetData
-						},
-					});
+					this.createEvent(e,'syncBefore');
 				}
 			}, this),
 			'changed.owl.carousel': $.proxy(function(e) {
 				if (e.namespace && e.property.name == 'position') {
 					this.update(e.item.index);
-					var settings = this._core.settings;
-					this._core.trigger('syncAfter', { 
-						syncTarget: { 
-							name: settings.syncTarget,
-							elements: $(settings.syncTarget),
-							position: e.item.index
-						},
-					});
+					this.createEvent(e,'syncAfter');
 				}
 			}, this),
 		};
 
-		// set default options
+		/* set default options */
 		this._core.options = $.extend({}, Sync.Defaults, this._core.options);
 
-		// register event handlers
+		/* register event handlers */
 		this.$element.on(this._handlers);
 	};
 
@@ -85,20 +61,29 @@
 	};
 
 	/**
-	 * Initializes the plugin and extends the carousel.
-	 * @protected
-	 */
-	Sync.prototype.initialize = function() {
-		
-	};
-
-	/**
 	 * Updates target carousel state.
 	 * @protected
 	 */
 	Sync.prototype.update = function(position) {
 		var settings = this._core.settings;
 		$(settings.syncTarget).trigger('to.owl.carousel', [position, settings.navSpeed, true]);
+	};
+
+	/**
+	 * create event fof to sync callback
+	 * @param  {object} e     carousel
+	 * @param  {string} event event name
+	 */
+	Sync.prototype.createEvent = function(e,event) {
+		var settings = this._core.settings,
+			targetData;
+		this._core.trigger(event, {
+			syncTarget: { 
+				name: settings.syncTarget,
+				elements: $(settings.syncTarget),
+				position: e.item.index,
+			},
+		});
 	};
 
 	/**
