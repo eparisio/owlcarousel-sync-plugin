@@ -12,9 +12,12 @@ See:
 This function was made to supply the need to synchronize two OwlCarousels. 
 **E.g.:** embed product gallery.
 
+## Install
+- **Bower**: `$ bower install owl.carousel.sync`
+
 ## Usage
 
-Just follow the steps:
+### Just follow the steps:
 
 1. Construct your exhibition carousel and your nav carousel the way you want.
 2. Use jQuery selector (or variable with the carousel Object) and plug the plugin on it, the plugin has an Object parameter.
